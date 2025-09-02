@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Text Analyzer | NLP Project</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for a nice, clean font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for the highlighted entities */
+        .entity-tag {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.25rem;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto max-w-4xl px-4 py-8 md:py-16">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900">Advanced NLP Text Analyzer</h1>
+            <p class="text-lg text-gray-600 mt-2">AI-powered analysis for sentiment, entities, emotions, and summarization.</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+            
+            <!-- Input Text Area -->
+            <div>
+                <label for="text-input" class="block text-sm font-medium text-gray-700 mb-2">Enter your text below:</label>
+                <textarea id="text-input" rows="8" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200" placeholder="Paste a long block of text here... for example: 'The team at Apple, led by Tim Cook, was overjoyed with the fantastic launch of the new iPhone in Paris. However, some critics were angry about the high price, expressing fear it might not sell well. The event was a huge success overall.'"></textarea>
+            </div>
+
+            <!-- Analyze Button -->
+            <div class="text-center mt-6">
+                <button id="analyze-btn" class="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    Analyze Text
+                </button>
+            </div>
+            
+            <!-- Loading Spinner -->
+            <div id="loader" class="text-center mt-6 hidden">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-500 mt-2">Analyzing...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results" class="mt-8 border-t border-gray-200 pt-6 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">Analysis Results</h2>
+
+                <!-- Warnings Section -->
+                <div id="warnings-section" class="mb-6 hidden">
+                    <h3 class="text-xl font-semibold mb-3 text-yellow-800">⚠️ Warnings</h3>
+                    <div id="warnings-result" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-base leading-relaxed text-yellow-700">
+                    </div>
+                </div>
+
+                <!-- NEW: Summary Result -->
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold mb-3 text-gray-800">📝 AI-Generated Summary</h3>
+                    <div id="summary-result" class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-base leading-relaxed italic text-gray-700">
+                    </div>
+                </div>
+
+
+                <!-- Analysis Grid -->
+                <div class="grid md:grid-cols-2 gap-6">
+
+                    <!-- Left Column: Sentiment & Emotions -->
+                    <div>
+                        <!-- Sentiment Result -->
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">😊 Sentiment</h3>
+                        <div id="sentiment-result" class="mb-6 p-4 rounded-lg flex items-center">
+                            <p class="text-lg font-semibold"></p>
+                        </div>
+        
+                        <!-- NEW: Emotion Result -->
+                        <h3 class="text-xl font-semibold mb-3 text-gray-800">🎨 Emotions Detected</h3>
+                        <div id="emotion-result" class="space-y-2">
+                           <!-- Emotion bars will be injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Entities -->
+                    <div>
+                         <h3 class="text-xl font-semibold mb-3 text-gray-800">🏷️ Named Entities</h3>
+                        <div id="entities-result" class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-lg leading-relaxed">
+                            <!-- Highlighted text will be injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center mt-8 text-gray-500">
+            <p>An advanced NLP project by Suruthi S.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const textInput = document.getElementById('text-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loader = document.getElementById('loader');
+        const resultsDiv = document.getElementById('results');
+        const sentimentResultDiv = document.getElementById('sentiment-result');
+        const entitiesResultDiv = document.getElementById('entities-result');
+        const emotionResultDiv = document.getElementById('emotion-result'); // New
+        const summaryResultDiv = document.getElementById('summary-result'); // New
+        const warningsSection = document.getElementById('warnings-section'); // New
+        const warningsResultDiv = document.getElementById('warnings-result'); // New
+
+        const entityColors = {
+            'PERSON': 'bg-blue-100 text-blue-800', 'ORG': 'bg-green-100 text-green-800',
+            'GPE': 'bg-purple-100 text-purple-800', 'LOC': 'bg-indigo-100 text-indigo-800',
+            'DATE': 'bg-yellow-100 text-yellow-800', 'TIME': 'bg-pink-100 text-pink-800',
+            'MONEY': 'bg-teal-100 text-teal-800', 'PRODUCT': 'bg-orange-100 text-orange-800',
+            'EVENT': 'bg-red-100 text-red-800', 'DEFAULT': 'bg-gray-100 text-gray-800'
+        };
+        const emotionEmojis = {
+            'joy': '😄', 'positive': '👍', 'trust': '🤝', 'anticipation': '🤔',
+            'sadness': '😢', 'negative': '👎', 'fear': '😨', 'anger': '😠', 'disgust': '🤢', 'surprise': '😲'
+        };
+
+        analyzeBtn.addEventListener('click', analyzeText);
+
+        async function analyzeText() {
+            const text = textInput.value.trim();
+            if (text === '') {
+                alert('Please enter some text to analyze.');
+                return;
+            }
+
+            loader.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                const apiUrl = 'http://127.0.0.1:5000/analyze';
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text }),
+                });
+
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error("Error during analysis:", error);
+                
+                // Show error in results area instead of alert
+                resultsDiv.classList.remove('hidden');
+                resultsDiv.innerHTML = `
+                    <div class="text-center p-8">
+                        <div class="text-red-500 text-6xl mb-4">❌</div>
+                        <h3 class="text-xl font-semibold text-red-800 mb-2">Analysis Failed</h3>
+                        <p class="text-red-600 mb-4">${error.message}</p>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+                            <p class="text-sm text-red-700"><strong>Troubleshooting:</strong></p>
+                            <ul class="text-sm text-red-600 mt-2 list-disc list-inside">
+                                <li>Make sure the Python server is running on port 5000</li>
+                                <li>Check that all required packages are installed</li>
+                                <li>Verify the server console for detailed error messages</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                loader.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function displayResults(data) {
+            // --- Display Warnings ---
+            if (data.warnings && data.warnings.length > 0) {
+                warningsSection.classList.remove('hidden');
+                warningsResultDiv.innerHTML = data.warnings.map(warning => `<p>• ${warning}</p>`).join('');
+            } else {
+                warningsSection.classList.add('hidden');
+            }
+
+            // --- Display Summary ---
+            summaryResultDiv.textContent = data.summary || "No summary could be generated.";
+
+            // --- Display Sentiment ---
+            const { label, score } = data.sentiment;
+            const sentimentPara = sentimentResultDiv.querySelector('p');
+            let sentimentEmoji = '😐';
+            sentimentResultDiv.className = 'mb-6 p-4 rounded-lg flex items-center '; 
+            if (label === 'Positive') {
+                sentimentResultDiv.classList.add('bg-green-100', 'text-green-800');
+                sentimentEmoji = '😊';
+            } else if (label === 'Negative') {
+                sentimentResultDiv.classList.add('bg-red-100', 'text-red-800');
+                sentimentEmoji = '😞';
+            } else {
+                sentimentResultDiv.classList.add('bg-yellow-100', 'text-yellow-800');
+            }
+            sentimentPara.innerHTML = `<strong class="mr-2">${sentimentEmoji} ${label}</strong> (Score: ${score.toFixed(2)})`;
+            
+            // --- Display Emotions ---
+            emotionResultDiv.innerHTML = ''; // Clear previous results
+            const emotions = data.emotions;
+            const sortedEmotions = Object.entries(emotions)
+                .filter(([_, value]) => value > 0)
+                .sort((a, b) => b[1] - a[1]);
+
+            if (sortedEmotions.length > 0) {
+                 sortedEmotions.forEach(([emotion, count]) => {
+                    const emoji = emotionEmojis[emotion] || '✨';
+                    const bar = `
+                        <div class="flex items-center text-sm">
+                            <span class="w-24 capitalize">${emoji} ${emotion}</span>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-blue-500 h-2.5 rounded-full" style="width: ${count * 10}%"></div>
+                            </div>
+                             <span class="ml-2 font-semibold text-gray-600">${count}</span>
+                        </div>`;
+                    emotionResultDiv.innerHTML += bar;
+                });
+            } else {
+                emotionResultDiv.innerHTML = `<p class="text-gray-500">No specific emotions detected.</p>`;
+            }
+
+            // --- Display Entities ---
+            const originalText = textInput.value;
+            let highlightedText = originalText;
+            data.entities.slice().reverse().forEach(ent => {
+                const colorClass = entityColors[ent.label] || entityColors['DEFAULT'];
+                const replacement = `<span class="font-semibold">${ent.text}<span class="entity-tag ${colorClass}">${ent.label}</span></span>`;
+                const lastIndex = highlightedText.lastIndexOf(ent.text);
+                if (lastIndex !== -1) {
+                    highlightedText = highlightedText.substring(0, lastIndex) + replacement + highlightedText.substring(lastIndex + ent.text.length);
+                }
+            });
+            entitiesResultDiv.innerHTML = highlightedText.replace(/\n/g, '<br>');
+            
+            resultsDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
+
